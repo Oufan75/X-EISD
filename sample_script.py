@@ -16,102 +16,52 @@ if __name__ == '__main__':
 
     # parameters
     data_path = "data/"         # path to experimental data and structure pools
-    structure = 'ensemble'      # ['trades_uf', 'mixed', 'ensemble'], trades_uf refers to the Random pool
-
-    # run_mode: How do you want to run the eisd optimizer?
-    #   - all: optimize on all experimental observables together
-    #   - single: optimize on individual experimental observable
-    #   - dual: optimize on pairs of experimental observables
+    structure = 'ml'      # ['trades_uf', 'mixed', 'ensemble'], trades_uf refers to the Random pool
     run_mode = 'all'
-
+    protein = 'drk'
     opt_type = 'max'    # optimization type: 'max', 'mc', None
-    beta = 0.1          # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
-
-    # run_mode = 'pre_indices'
-    # pre_indices_mode = 'all'  # 'dual' or 'signle'
-    # pre_indices_path = 'local/newrun_2020/new_prop_errors2/positive_mc/%s/single_mode/opt_%s/'%(structure,str(opt_type))
-    # pre_indices_path = 'local/newrun_2020/new_prop_errors2/positive_mc/%s/dual_mode/opt_%s/'%(structure,str(opt_type))
-    # pre_indices_path = 'local/ensemble_1700/'
-
-    # read files: meta_data and read_data functions provide all required info to reproduce our published results
-    filenames = meta_data(data_path)
+    beta = 0.1        # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
+    
+    filenames = meta_data(data_path, protein)
     exp_data = read_data(filenames['exp'], mode='exp')
     bc_data = read_data(filenames[structure], mode=structure)
 
     # run_mode: all
     if run_mode == 'all':
         if opt_type == 'mc':
-            abs_output = "local/newrun_2021/%s/all_mode/opt_%s_b%s"%(structure,str(opt_type), str(beta))
+            abs_output = "local/%s/mc_all_%s"%(structure, protein)
         else:
-            abs_output = "local/newrun_2021/%s/all_mode/opt_%s"%(structure,str(opt_type))
+            abs_output = "local/%s/rl_noejc2/max_all_%s2"%(structure, protein)
 
         if not os.path.exists(abs_output):
             os.makedirs(abs_output)
 
-        # main(exp_data, bc_data, epochs=1000, mode='all', optimization=True, output_dir=abs_output, verbose=False)
-        main(exp_data, bc_data, epochs=1000, mode='all', beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=False)
+        main(exp_data, bc_data, epochs=100, mode=['jc', 'noe', 'pre', 'fret', 'cs'], beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=True) #
 
     # run_mode: dual
     elif run_mode == 'dual':
-        pairs = make_pairs()
-        # pairs = [['saxs', 'jc'],['cs', 'jc'], ['fret', 'jc'],['jc', 'noe'],['jc', 'pre'],['jc', 'rdc'],['jc', 'rh']]
-        # pairs = [['fret', 'noe'], ['fret', 'pre'], ['fret', 'rdc'], ['fret', 'rh']]
+        pairs = [['jc', 'pre']]
         for pair in pairs:
             if opt_type == 'mc':
-                abs_output = "local/newrun_2020/new_prop_errors2/positive_mc/%s/dual_mode/opt_%s_b%s/%s_%s"%(structure, str(opt_type), str(beta) ,pair[0], pair[1])
+                abs_output = "local/%s/L+E+/mc_%s_%s_%s2"%(structure, pair[0], pair[1], protein)
             else:
-                abs_output = "local/newrun_2020/new_prop_errors2/positive_mc/%s/dual_mode/opt_%s/%s_%s"%(structure, str(opt_type),pair[0], pair[1])
+                abs_output = "local/%s/max_%s_%s_%s"%(structure, pair[0], pair[1], protein)
 
             if not os.path.exists(abs_output):
                 os.makedirs(abs_output)
-            main(exp_data, bc_data, epochs=1000, mode=pair, beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=False)
+            main(exp_data, bc_data, epochs=100, mode=pair, beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=True)
 
     # run_mode: single
     elif run_mode == 'single':
-        single_modes = ['saxs', 'cs', 'fret', 'jc', 'noe', 'pre', 'rdc', 'rh']
-        # single_modes = ['saxs', 'cs', 'fret']
+        single_modes = ['cs'] #, 'fret', 'cs', 'rdc', 'rh']
         for mode in single_modes:
             if opt_type == 'mc':
-                abs_output = "local/newrun_2020/new_prop_errors2/positive_mc/%s/single_mode/opt_%s_b%s/%s"%(structure, str(opt_type),str(beta),mode)
+                abs_output = "local/%s/L+E+/%s_%s_%s"%(structure, str(opt_type), mode, protein)
             else:
-                abs_output = "local/newrun_2020/new_prop_errors2/positive_mc/%s/single_mode/opt_%s/%s"%(structure, str(opt_type), mode)
+                abs_output = "local/%s/%s_%s_%s"%(structure, str(opt_type), mode, protein)
 
             if not os.path.exists(abs_output):
                 os.makedirs(abs_output)
 
-            main(exp_data, bc_data, epochs=1000, mode=mode, beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=True)
+            main(exp_data, bc_data, epochs=100, mode=mode, beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=True)
 
-    """
-    # run_mode: pre_indices; to calculate scores/RMSDs for the remaining unoptimized properties
-    elif run_mode == 'pre_indices':
-        if pre_indices_mode == 'single':
-            for prop in ['saxs', 'cs', 'jc', 'fret', 'noe', 'pre', 'rh', 'rdc']:
-                ind_path = os.path.join(pre_indices_path, prop, 'indices.csv')
-                pre_indices = pd.read_csv(ind_path, header=None).values
-
-                abs_output = os.path.join(pre_indices_path, prop, 'all_processed')
-                print(abs_output)
-                if not os.path.exists(abs_output):
-                    os.makedirs(abs_output)
-                main(exp_data, bc_data, pre_indices=pre_indices, output_dir=abs_output)
-
-        elif pre_indices_mode == 'dual':
-            pairs = make_pairs()
-            for pair in pairs:
-                ind_path = os.path.join(pre_indices_path, '%s_%s'%(pair[0], pair[1]), 'indices.csv')
-                pre_indices = pd.read_csv(ind_path, header=None).values
-
-                abs_output = os.path.join(pre_indices_path, '%s_%s'%(pair[0], pair[1]), 'all_processed')
-                print(abs_output)
-                if not os.path.exists(abs_output):
-                    os.makedirs(abs_output)
-                main(exp_data, bc_data, pre_indices=pre_indices, output_dir=abs_output)
-
-        elif pre_indices_mode == 'all':
-            pre_indices = np.array([range(1700)])
-            abs_output = os.path.join(pre_indices_path, 'all_processed')
-            print(abs_output)
-            if not os.path.exists(abs_output):
-                os.makedirs(abs_output)
-            main(exp_data, bc_data, pre_indices=pre_indices, output_dir=abs_output, opt_type=None)
-    """

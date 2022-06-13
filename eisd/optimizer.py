@@ -45,7 +45,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
         if flags['cs']:
             restraint_SSE_CS, new_score_CS, new_shift_vals, _ = cs_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_shift_vals, popped_structure,
-                                                                                       new_index)
+                                                                                       new_index, ens_size)
         else:
             restraint_SSE_CS, new_score_CS, new_shift_vals = [0,0,0]
 
@@ -60,8 +60,8 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # JC
         if flags['jc']:
-            restraint_SSE_JC, new_score_JC, new_alpha_vals, jcoup_vals, _ = jc_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_alpha_vals, popped_structure,
+            restraint_SSE_JC, new_score_JC, jcoup_vals, _, new_alpha_vals = jc_ensemble(exp_data, bc_data, None,
+                                                                                       old_alpha_vals, pop_index,
                                                                                        new_index)
         else:
             restraint_SSE_JC, new_score_JC, new_alpha_vals, jcoup_vals = [0,0,0,[0]]
@@ -69,7 +69,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
         # NOE
         if flags['noe']:
             restraint_SSE_NOE, new_score_NOEs, new_dist_vals_NOE, _ = noe_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_dist_vals_NOE, popped_structure,
+                                                                                       old_dist_vals_NOE, popped_structure,             
                                                                                        new_index)
         else:
             restraint_SSE_NOE, new_score_NOEs, new_dist_vals_NOE = [0,0,0]
@@ -79,7 +79,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
         if flags['pre']:
             restraint_SSE_PRE, new_score_PREs, new_dist_vals_PRE, _ = pre_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_dist_vals_PRE, popped_structure,
-                                                                                       new_index)
+                                                                                       new_index, ens_size)
         else:
             restraint_SSE_PRE, new_score_PREs, new_dist_vals_PRE = [0,0,0]
 
@@ -100,29 +100,34 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
                                                                                        new_index)
         else:
             restraint_SSE_RH, new_score_RH, new_RH_val = [0,0,0]
-
-
-        # if iterations%1000 == 0:
-        #     print("\n*** iteration %i\n"%iterations)
-        #     print(popped_structure)
-        #     print(new_score_SAXS, new_score_CS, new_score_FRET, new_score_JC)
-        #     print(new_score_NOEs, new_score_PREs, new_score_RDCs, new_score_RH)
-
+        
+        # in case none of the exchange attempts is accepted 
+        if iterations == 0:
+            new_SSE_SAXS = restraint_SSE_SAXS
+            new_SSE_CS = restraint_SSE_CS
+            new_SSE_FRET = restraint_SSE_FRET
+            new_SSE_JC = restraint_SSE_JC
+            new_SSE_NOE = restraint_SSE_NOE
+            new_SSE_PRE = restraint_SSE_PRE
+            new_SSE_RDC = restraint_SSE_RDC
+            new_SSE_RH = restraint_SSE_RH
+        
         if opt_type == 'mc':
             old_score = old_score_SAXS + old_score_CS + old_score_FRET + old_score_JC + old_score_NOEs + old_score_PREs + \
                         old_score_RDCs + old_score_RH
             new_score = new_score_SAXS + new_score_CS + new_score_FRET + new_score_JC + \
                     new_score_NOEs + new_score_PREs + new_score_RDCs + new_score_RH
-
+                     
             new_probability = np.exp(beta*new_score)
             old_probability = np.exp(beta*old_score)
+            # to deal with runtime error caused by large score values
+            if np.any(np.isinf([old_probability, new_probability])):
+                print('Runtime error... reset beta value')
+                beta = 500./new_probability
+                new_probability = np.exp(beta*new_score)
+                old_probability = np.exp(beta*old_score)
             u = np.random.random_sample()
 
-            # print(iterations, old_score, old_score_PREs, new_score, new_score_PREs)
-            # print('optimization it%i:\n'%iterations,
-            #       new_score-old_score, u, new_probability/old_probability)
-            # print('old:', old_score, [old_probability])
-            # print('new:', new_score, [new_probability])
 
             if u < min(1, new_probability/old_probability): # acceptance criterion
                 old_score_SAXS = new_score_SAXS
@@ -164,9 +169,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
                     new_score_NOEs + new_score_PREs + new_score_RDCs + new_score_RH:
                 indices.pop(-1)
                 indices.append(popped_structure)
-                # print repr(i) + ' 0 ' + repr(new_score_SAXS) + ' ' + repr(old_score_SAXS) + ' ' + repr(indices)
             else:
-                #print repr(i+1) + ' ' + repr(new_score_SAXS) + ' ' + repr(old_score_SAXS) + ' ' + repr(indices)
                 old_score_SAXS = new_score_SAXS
                 old_score_CS = new_score_CS
                 old_score_FRET = new_score_FRET
@@ -228,9 +231,8 @@ def main(exp_data, bc_data, pre_indices=None, ens_size=100,
     """
 
     #  get size
-    pool_size = bc_data['cs'].data.shape[0]
+    pool_size = bc_data['jc'].data.shape[0]
     if verbose: print("\n### pool size: %i"%pool_size)
-
     # time
     t0 = time.time()
 
@@ -265,6 +267,7 @@ def main(exp_data, bc_data, pre_indices=None, ens_size=100,
         if flags['cs']:
             sse_cs, total_score_cs, bc_cs, _ = cs_optimization_ensemble(exp_data, bc_data, indices)
         else:
+            cs_num = 1.
             sse_cs, total_score_cs, bc_cs = [0, 0, 0]
 
         # FRET optimization on ensemble
@@ -275,20 +278,24 @@ def main(exp_data, bc_data, pre_indices=None, ens_size=100,
 
         # JC optimization on ensemble
         if flags['jc']:
-            sse_jc, total_score_jc, bc_alpha_vals_jc, best_jcoups, _  = jc_optimization_ensemble(exp_data, bc_data, indices)
+            sse_jc, total_score_jc, best_jcoups, _, bc_alpha_vals_jc = jc_ensemble(exp_data, bc_data, indices)
         else:
+            jc_num = 1.
             sse_jc, total_score_jc, bc_alpha_vals_jc, best_jcoups = [0, 0, 0, [0]]
 
         # NOEs optimization on ensemble
         if flags['noe']:
+            noe_num = exp_data['noe'].data.shape[0]
             sse_noe, total_score_noe, bc_dist_vals_noe, _ = noe_optimization_ensemble(exp_data, bc_data, indices)
         else:
+            noe_num = 1.
             sse_noe, total_score_noe, bc_dist_vals_noe = [0, 0, 0]
 
         # PREs optimization on ensemble
         if flags['pre']:
             sse_pre, total_score_pre, bc_pre, _  = pre_optimization_ensemble(exp_data, bc_data, indices)
         else:
+            pre_num = 1.
             sse_pre, total_score_pre, bc_pre = [0, 0, 0]
 
         # RDCs optimization on ensemble
@@ -314,38 +321,19 @@ def main(exp_data, bc_data, pre_indices=None, ens_size=100,
                                                                      total_score_rh,
                                                                      bc_saxs, bc_cs, bc_fret, bc_alpha_vals_jc,
                                                                      bc_dist_vals_noe, bc_pre, bc_rdc, bc_rh)
-        else:
-            accepted = 0
-            new_indices = indices
-
-            max_score_SAXS = total_score_saxs
-            max_score_CS = total_score_cs
-            max_score_FRET = total_score_fret
-            max_score_JC = total_score_jc
-            max_score_NOEs = total_score_noe
-            max_score_PREs = total_score_pre
-            max_score_RDCs = total_score_rdc
-            max_score_RH = total_score_rh
-
-            opt_SSE_SAXS = sse_saxs
-            opt_SSE_CS = sse_cs
-            opt_SSE_FRET = sse_fret
-            opt_SSE_JC = sse_jc
-            opt_SSE_NOE = sse_noe
-            opt_SSE_PRE = sse_pre
-            opt_SSE_RDC = sse_rdc
-            opt_SSE_RH = sse_rh
+    
+        # calculate scores for unoptimized data types (JC, NOE, PRE)
+        if not flags['pre']:
+            opt_SSE_PRE, max_score_PREs = pre_optimization_ensemble(exp_data, bc_data, new_indices)[:2]
+        #if not flags['noe']:
+        #    opt_SSE_NOE, max_score_NOEs = noe_optimization_ensemble(exp_data, bc_data, new_indices)[:2]
+        if not flags['jc']:
+            opt_SSE_JC, max_score_JC = jc_ensemble(exp_data, bc_data, new_indices)[:2]
 
         s = [it, accepted, max_score_SAXS, max_score_CS, max_score_FRET, max_score_JC,
                            max_score_NOEs, max_score_PREs, max_score_RDCs, max_score_RH,
-                (opt_SSE_SAXS / 37.0) ** 0.5,
-                (opt_SSE_CS / 262.0) ** 0.5,
-                opt_SSE_FRET ** 0.5,
-                (opt_SSE_JC / 47.0) ** 0.5,
-                (opt_SSE_NOE / 93.0) ** 0.5,
-                (opt_SSE_PRE / 68.0) ** 0.5,
-                (opt_SSE_RDC / 28.0) ** 0.5,
-                opt_SSE_RH ** 0.5
+             opt_SSE_SAXS, opt_SSE_CS, opt_SSE_FRET, opt_SSE_JC, opt_SSE_NOE, 
+             opt_SSE_PRE, opt_SSE_RDC, opt_SSE_RH
              ]
         final_results.append(s)
         final_indices.append(new_indices)
