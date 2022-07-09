@@ -44,8 +44,9 @@ if __name__ == '__main__':
     run_mode = 'all'    # supports single, dual, multiple and all data types optimization:
                         # for specific joint data combinations: use [data_type1, data_type2, ...], ex. ['jc', 'pre']
     resnum = 59         # protein residue number for SAXS calculations
-    ens_size = 100       # ensemble size
+    ens_size = 100      # ensemble size
     pool_size = 400     # initial conformer number
+    trials = 100        # number of optimization runs 
     opt_type = 'max'    # optimization type: 'max', 'mc'
     beta = 0.1          # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
     abs_output = 'local/'      # outputs save to
@@ -58,21 +59,21 @@ if __name__ == '__main__':
 
     # run_mode: all
     if run_mode == 'all':
-        xeisd_optimization.optimize(10, mode='all', ens_size=ens_size, opt_type=opt_type, output_dir=abs_output) 
+        xeisd_optimization.optimize(trials, mode='all', ens_size=ens_size, opt_type=opt_type, output_dir=abs_output) 
 
     # run_mode: dual
     elif run_mode == 'duals':
         pairs = make_pairs(list(exp_data.keys()))
         #print(pairs)
         for pair in pairs:
-            xeisd_optimization.optimize(100, mode=pair, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
+            xeisd_optimization.optimize(trials, mode=pair, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
 
     # run_mode: single
     elif run_mode == 'singles':
         single_modes = ['cs', 'pre']
         for mode in single_modes:
-            xeisd_optimization.optimize(100, mode=mode, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
+            xeisd_optimization.optimize(trials, mode=mode, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
     
     else:
-        xeisd_optimization.optimize(100, mode=run_mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
+        xeisd_optimization.optimize(trials, mode=run_mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
 
