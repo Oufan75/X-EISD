@@ -7,61 +7,71 @@ np.random.seed(91)
 import os
 import pandas as pd
 
-from eisd.utils import meta_data
 from eisd.parser import read_data
 from eisd.utils import make_pairs
-from eisd.optimizer import main
+from eisd.optimizer import XEISD
 
 if __name__ == '__main__':
 
-    # parameters
-    data_path = "data/"         # path to experimental data and structure pools
-    structure = 'ml'      # ['trades_uf', 'mixed', 'ensemble'], trades_uf refers to the Random pool
-    run_mode = 'all'
-    protein = 'drk'
-    opt_type = 'max'    # optimization type: 'max', 'mc', None
-    beta = 0.1        # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
+    # path to experimental data and structure pools
+    # supports cs, fret, jc, rdc, rh, pre, noe, saxs scoring
+    relative_path = 'exp_data'
+    exp_data_path = {
+        'pre' : os.path.join(relative_path, "drksh3_pres.txt"),
+        'jc'  : os.path.join(relative_path, "drksh3_JC.txt"),
+        'cs'  : os.path.join(relative_path, "drksh3_CS.txt"),
+    }    
+    relative_path = 'back_calc_data'
+    bc_data_path =  {
+        'pre' : os.path.join(relative_path, "rl_pre.txt"),
+        'jc'  : os.path.join(relative_path, "rl_jc.txt"),
+        'cs'  : os.path.join(relative_path, "rl_cs.txt"),
+    }
+    # define back calculation uncertainties
+    bc_errors = {
+        'pre': 0.0001,
+        'noe': 0.0001,
+        'saxs': 0.006,
+        'fret': 0.0074,
+        'rh': 0.812,
+        'rdc': 0.88,
+        'cs': {'C': 1.31, 'CA': 0.97, 'CB': 1.29, 'H': 0.38, 'HA': 0.29} #reported from UCBShifts
+        # J-coupling errors set by default
+    }
+
+    # other parameters
+    run_mode = 'all'    # supports single, dual, multiple and all data types optimization:
+                        # for specific joint data combinations: use [data_type1, data_type2, ...], ex. ['jc', 'pre']
+    resnum = 59         # protein residue number for SAXS calculations
+    ens_size = 100       # ensemble size
+    pool_size = 400     # initial conformer number
+    opt_type = 'max'    # optimization type: 'max', 'mc'
+    beta = 0.1          # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
+    abs_output = 'local/'      # outputs save to
+    if not os.path.exists(abs_output):
+        os.makedirs(abs_output)
     
-    filenames = meta_data(data_path, protein)
-    exp_data = read_data(filenames['exp'], mode='exp')
-    bc_data = read_data(filenames[structure], mode=structure)
+    exp_data = read_data(exp_data_path, mode='exp')
+    bc_data = read_data(bc_data_path, mode='bc', bc_errors=bc_errors)
+    xeisd_optimization = XEISD(exp_data, bc_data, pool_size=pool_size, nres=resnum)
 
     # run_mode: all
     if run_mode == 'all':
-        if opt_type == 'mc':
-            abs_output = "local/%s/mc_all_%s"%(structure, protein)
-        else:
-            abs_output = "local/%s/rl_noejc2/max_all_%s2"%(structure, protein)
-
-        if not os.path.exists(abs_output):
-            os.makedirs(abs_output)
-
-        main(exp_data, bc_data, epochs=100, mode=['jc', 'noe', 'pre', 'fret', 'cs'], beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=True) #
+        xeisd_optimization.optimize(10, mode='all', ens_size=ens_size, opt_type=opt_type, output_dir=abs_output) 
 
     # run_mode: dual
-    elif run_mode == 'dual':
-        pairs = [['jc', 'pre']]
+    elif run_mode == 'duals':
+        pairs = make_pairs(list(exp_data.keys()))
+        #print(pairs)
         for pair in pairs:
-            if opt_type == 'mc':
-                abs_output = "local/%s/L+E+/mc_%s_%s_%s2"%(structure, pair[0], pair[1], protein)
-            else:
-                abs_output = "local/%s/max_%s_%s_%s"%(structure, pair[0], pair[1], protein)
-
-            if not os.path.exists(abs_output):
-                os.makedirs(abs_output)
-            main(exp_data, bc_data, epochs=100, mode=pair, beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=True)
+            xeisd_optimization.optimize(100, mode=pair, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
 
     # run_mode: single
-    elif run_mode == 'single':
-        single_modes = ['cs'] #, 'fret', 'cs', 'rdc', 'rh']
+    elif run_mode == 'singles':
+        single_modes = ['cs', 'pre']
         for mode in single_modes:
-            if opt_type == 'mc':
-                abs_output = "local/%s/L+E+/%s_%s_%s"%(structure, str(opt_type), mode, protein)
-            else:
-                abs_output = "local/%s/%s_%s_%s"%(structure, str(opt_type), mode, protein)
-
-            if not os.path.exists(abs_output):
-                os.makedirs(abs_output)
-
-            main(exp_data, bc_data, epochs=100, mode=mode, beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=True)
+            xeisd_optimization.optimize(100, mode=mode, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
+    
+    else:
+        xeisd_optimization.optimize(100, mode=run_mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
 
