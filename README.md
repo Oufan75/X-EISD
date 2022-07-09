@@ -26,7 +26,7 @@ You can follow along the sample_script.py in the repository:
 
     python sample_script.py     # first modify sample_script based upon your request 
     
-Example experimental data files can be found in the data folder. Examples back calculations are shown in the EISD_back_calc notebook. Please refer to the above 2 papers for details on experimental data and back calculations and determining uncertainties.
+Example experimental data files can be found in the data folder. Back calculation examples are shown in the EISD_back_calc notebook. Please refer to the above 2 papers for details on experimental data and back calculations and determining uncertainties.
       
 
 
