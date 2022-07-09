@@ -52,8 +52,6 @@ if __name__ == '__main__':
     opt_type = 'max'    # optimization type: 'max', 'mc'
     beta = 0.1          # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
     abs_output = 'local/'      # outputs save to
-    if not os.path.exists(abs_output):
-        os.makedirs(abs_output)
     
     exp_data = read_data(exp_data_path, mode='exp')
     bc_data = read_data(bc_data_path, mode='bc', bc_errors=bc_errors)
@@ -68,12 +66,14 @@ if __name__ == '__main__':
         pairs = make_pairs(list(exp_data.keys()))
         #print(pairs)
         for pair in pairs:
+            abs_output = 'local/%s_%s_%s/'%(opt_type, pair[0], pair[1])
             xeisd_optimization.optimize(trials, mode=pair, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
 
     # run_mode: single
     elif run_mode == 'singles':
         single_modes = ['cs', 'pre']
         for mode in single_modes:
+            abs_output = 'local/%s_%s/'%(opt_type, mode)
             xeisd_optimization.optimize(trials, mode=mode, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
     
     else:
