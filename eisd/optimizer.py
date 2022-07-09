@@ -260,7 +260,7 @@ class XEISD(object):
         pd.DataFrame(final_indices).to_csv(os.path.join(output_dir, 'indices.csv'), index=False, header=False)
         if self.verbose:
             output = pd.DataFrame(final_results)
-            for n in range(2, 18):
+            for n in range(2, len(result_header)):
                 print(result_header[n], output.iloc[:, n].mean(), output.iloc[:, n].std())
         if flags['jc']:
             pd.DataFrame(final_best_jcoups).to_csv(os.path.join(output_dir, 'best_jcoups.csv'), index=False, header=False)
