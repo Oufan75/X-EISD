@@ -7,343 +7,344 @@ from eisd.utils import modes
 from eisd.scorers import *
 
 
-def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags,beta, opt_type,
-                        old_score_SAXS, old_score_CS, old_score_FRET, old_score_JC,
-                        old_score_NOEs, old_score_PREs, old_score_RDCs, old_score_RH,
-                        bc_SAXS_vals, bc_shift_vals, bc_FRET_val, bc_alpha_vals,
-                        bc_dist_vals_NOE, bc_dist_vals_PRE, bc_RDC_vals, bc_RH_val):
-    indices = list(indices)
-    old_SAXS_vals = bc_SAXS_vals
-    old_shift_vals = bc_shift_vals
-    old_FRET_val = bc_FRET_val
-    old_alpha_vals = bc_alpha_vals
-    old_dist_vals_NOE = bc_dist_vals_NOE
-    old_dist_vals_PRE = bc_dist_vals_PRE
-    old_RDC_vals = bc_RDC_vals
-    old_RH_val = bc_RH_val
-    accepted = 0
-    for iterations in range(10000):
-        pop_index = np.random.randint(0, ens_size, 1)[0]
-        popped_structure = indices[pop_index]
-        indices.pop(pop_index)
-        struct_found = False
-        while not struct_found:
-            new_index = np.random.randint(0, num_structs, 1)[0]
-            if new_index != popped_structure and new_index not in indices:
-                indices.append(new_index)
-                struct_found = True
+class XEISD(object):
+    """
+    This is the API to the X-EISD scoring to calculate and/or optimize log-likelihood of a
+    disordered protein ensemble.
+    Parameters
+    ----------
+    exp_data: dict
+        Experimental data files with uncertainties.
+    bc_data: dict
+        Back calculation files with uncertainties.
+    pool_size: int
+        number of candidate conformers.
+    
+    verbose: bool
 
-        # SAXS
-        if flags['saxs']:
-            restraint_SSE_SAXS, new_score_SAXS, new_SAXS_vals, _ = saxs_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_SAXS_vals, popped_structure,
-                                                                                       new_index)
-        else:
-            restraint_SSE_SAXS, new_score_SAXS, new_SAXS_vals = [0,0,0]
-
-        # CS
-        if flags['cs']:
-            restraint_SSE_CS, new_score_CS, new_shift_vals, _ = cs_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_shift_vals, popped_structure,
-                                                                                       new_index, ens_size)
-        else:
-            restraint_SSE_CS, new_score_CS, new_shift_vals = [0,0,0]
-
-
-        # FRET
-        if flags['fret']:
-            restraint_SSE_FRET, new_score_FRET, new_FRET_val, _ = fret_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_FRET_val, popped_structure,
-                                                                                       new_index)
-        else:
-            restraint_SSE_FRET, new_score_FRET, new_FRET_val = [0,0,0]
-
-        # JC
-        if flags['jc']:
-            restraint_SSE_JC, new_score_JC, jcoup_vals, _, new_alpha_vals = jc_ensemble(exp_data, bc_data, None,
-                                                                                       old_alpha_vals, pop_index,
-                                                                                       new_index)
-        else:
-            restraint_SSE_JC, new_score_JC, new_alpha_vals, jcoup_vals = [0,0,0,[0]]
-
-        # NOE
-        if flags['noe']:
-            restraint_SSE_NOE, new_score_NOEs, new_dist_vals_NOE, _ = noe_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_dist_vals_NOE, popped_structure,             
-                                                                                       new_index)
-        else:
-            restraint_SSE_NOE, new_score_NOEs, new_dist_vals_NOE = [0,0,0]
-
-
-        # PRE
-        if flags['pre']:
-            restraint_SSE_PRE, new_score_PREs, new_dist_vals_PRE, _ = pre_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_dist_vals_PRE, popped_structure,
-                                                                                       new_index, ens_size)
-        else:
-            restraint_SSE_PRE, new_score_PREs, new_dist_vals_PRE = [0,0,0]
-
-
-        # RDC
-        if flags['rdc']:
-            restraint_SSE_RDC, new_score_RDCs, new_RDC_vals, _ = rdc_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_RDC_vals, popped_structure,
-                                                                                       new_index)
-        else:
-            restraint_SSE_RDC, new_score_RDCs, new_RDC_vals = [0,0,0]
-
-
-        # RH
-        if flags['rh']:
-            restraint_SSE_RH, new_score_RH, new_RH_val, _ = rh_optimization_ensemble(exp_data, bc_data, None,
-                                                                                       old_RH_val, popped_structure,
-                                                                                       new_index)
-        else:
-            restraint_SSE_RH, new_score_RH, new_RH_val = [0,0,0]
+    """
+    def __init__(self, exp_data, bc_data, nres, pool_size=None, verbose=False):
         
-        # in case none of the exchange attempts is accepted 
-        if iterations == 0:
-            new_SSE_SAXS = restraint_SSE_SAXS
-            new_SSE_CS = restraint_SSE_CS
-            new_SSE_FRET = restraint_SSE_FRET
-            new_SSE_JC = restraint_SSE_JC
-            new_SSE_NOE = restraint_SSE_NOE
-            new_SSE_PRE = restraint_SSE_PRE
-            new_SSE_RDC = restraint_SSE_RDC
-            new_SSE_RH = restraint_SSE_RH
+        self.exp_data = exp_data
+        self.bc_data = bc_data
+        self.verbose = verbose
+        self.resnum = nres
+        self.pool_size = pool_size
+        if pool_size is None:
+            print('Pool size not provided. Uses the JC back-calc size.')
+            self.pool_size = bc_data['jc'].data.shape[0]
         
-        if opt_type == 'mc':
-            old_score = old_score_SAXS + old_score_CS + old_score_FRET + old_score_JC + old_score_NOEs + old_score_PREs + \
-                        old_score_RDCs + old_score_RH
-            new_score = new_score_SAXS + new_score_CS + new_score_FRET + new_score_JC + \
-                    new_score_NOEs + new_score_PREs + new_score_RDCs + new_score_RH
-                     
-            new_probability = np.exp(beta*new_score)
-            old_probability = np.exp(beta*old_score)
+        if verbose: print("\n### Pool size: %i"%pool_size)
+
+
+    def maximize_score(self, ens_size, indices, flags, init_scores, iters=10000):
+        indices = list(indices)
+        old_scores = {}
+        new_scores = {}
+        for prop in flags:
+            old_scores[prop] = init_scores[prop]
+            new_scores[prop] = [0, 0, 0]
+            if prop == 'jc':
+                new_scores[prop] = [0, 0, 0, [0]]
+        accepted = 0
+        
+        for iterations in range(iters):
+            pop_index = np.random.randint(0, ens_size, 1)[0]
+            popped_structure = indices[pop_index]
+            indices.pop(pop_index)
+            struct_found = False
+            while not struct_found:
+                new_index = np.random.randint(0, self.pool_size, 1)[0]
+                if new_index != popped_structure and new_index not in indices:
+                    indices.append(new_index)
+                    struct_found = True
+
+            for prop in flags:
+                if flags[prop]:
+                    # SAXS
+                    if prop == 'saxs':
+                        new_scores['saxs'] = list(saxs_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['saxs'][2], popped_structure,
+                                            new_index, ens_size, self.resnum))[:3]
+                    # CS
+                    if prop == 'cs':
+                        new_scores['cs'] = list(cs_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['cs'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # FRET
+                    if prop == 'fret':
+                        new_scores['fret'] = list(fret_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['fret'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # JC
+                    if prop == 'jc':
+                        new_scores['jc'] = list(jc_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['jc'][3], popped_structure,
+                                            new_index, ens_size))
+                    # NOE
+                    if prop == 'noe':
+                        new_scores['noe'] = list(noe_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['noe'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # PRE
+                    if prop == 'pre':
+                        new_scores['pre'] = list(pre_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['pre'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # RDC
+                    if prop == 'rdc':
+                        new_scores['rdc'] = list(rdc_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['rdc'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # RH
+                    if prop == 'rh':
+                        new_scores['rh'] = list(rh_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['rh'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+          
+            old_total_score = np.sum([old_scores[key][1] for key in old_scores])
+            new_total_score = np.sum([new_scores[key][1] for key in new_scores])
+         
+            if old_total_score > new_total_score:
+                indices.pop(-1)
+                indices.append(popped_structure)
+            else:
+                for prop in flags:
+                    old_scores[prop] = new_scores[prop]
+
+                accepted = accepted + 1
+        return old_scores, accepted, indices
+
+
+    def monte_carlo(self, ens_size, indices, flags, beta, init_scores, iters=10000):
+        indices = list(indices)
+        old_scores = {}
+        new_scores = {}
+        for prop in flags:
+            old_scores[prop] = init_scores[prop]
+            new_scores[prop] = [0, 0, 0]
+            if prop == 'jc':
+                new_scores[prop] = [0, 0, 0, [0]]
+        accepted = 0
+        
+        for iterations in range(iters):
+            pop_index = np.random.randint(0, ens_size, 1)[0]
+            popped_structure = indices[pop_index]
+            indices.pop(pop_index)
+            struct_found = False
+            while not struct_found:
+                new_index = np.random.randint(0, self.pool_size, 1)[0]
+                if new_index != popped_structure and new_index not in indices:
+                    indices.append(new_index)
+                    struct_found = True
+            
+            for prop in flags:
+                if flags[prop]:
+                    # SAXS
+                    if prop == 'saxs':
+                        new_scores['saxs'] = list(saxs_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['saxs'][2], popped_structure,
+                                            new_index, ens_size, self.resnum))[:3]
+                    # CS
+                    if prop == 'cs':
+                        new_scores['cs'] = list(cs_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['cs'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # FRET
+                    if prop == 'fret':
+                        new_scores['fret'] = list(fret_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['fret'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # JC
+                    if prop == 'jc':
+                        new_scores['jc'] = list(jc_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['jc'][3], popped_structure,
+                                            new_index, ens_size))
+                    # NOE
+                    if prop == 'noe':
+                        new_scores['noe'] = list(noe_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['noe'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # PRE
+                    if prop == 'pre':
+                        new_scores['pre'] = list(pre_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['pre'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # RDC
+                    if prop == 'rdc':
+                        new_scores['rdc'] = list(rdc_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['rdc'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+                    # RH
+                    if prop == 'rh':
+                        new_scores['rh'] = list(rh_optimization_ensemble(self.exp_data, 
+                                            self.bc_data, None, old_scores['rh'][2], popped_structure,
+                                            new_index, ens_size))[:3]
+
+            old_total_score = np.sum([old_scores[key][1] for key in old_scores])
+            new_total_score = np.sum([new_scores[key][1] for key in new_scores])
+                        
+            new_probability = np.exp(beta*new_total_score)
+            old_probability = np.exp(beta*old_total_score)
             # to deal with runtime error caused by large score values
             if np.any(np.isinf([old_probability, new_probability])):
                 print('Runtime error... reset beta value')
                 beta = 500./new_probability
                 new_probability = np.exp(beta*new_score)
                 old_probability = np.exp(beta*old_score)
-            u = np.random.random_sample()
-
-
-            if u < min(1, new_probability/old_probability): # acceptance criterion
-                old_score_SAXS = new_score_SAXS
-                old_score_CS = new_score_CS
-                old_score_FRET = new_score_FRET
-                old_score_JC = new_score_JC
-                old_score_NOEs = new_score_NOEs
-                old_score_PREs = new_score_PREs
-                old_score_RDCs = new_score_RDCs
-                old_score_RH = new_score_RH
-
-                old_SAXS_vals = new_SAXS_vals
-                old_shift_vals = new_shift_vals
-                old_FRET_val = new_FRET_val
-                old_alpha_vals = new_alpha_vals
-                old_dist_vals_NOE = new_dist_vals_NOE
-                old_dist_vals_PRE = new_dist_vals_PRE
-                old_RDC_vals = new_RDC_vals
-                old_RH_val = new_RH_val
-
-                new_SSE_SAXS = restraint_SSE_SAXS
-                new_SSE_CS = restraint_SSE_CS
-                new_SSE_FRET = restraint_SSE_FRET
-                new_SSE_JC = restraint_SSE_JC
-                new_SSE_NOE = restraint_SSE_NOE
-                new_SSE_PRE = restraint_SSE_PRE
-                new_SSE_RDC = restraint_SSE_RDC
-                new_SSE_RH = restraint_SSE_RH
-
+            # acceptance criterion
+            if np.random.random_sample() < min(1, new_probability/old_probability): 
+                for prop in flags:
+                    old_scores[prop] = new_scores[prop]
                 accepted = accepted + 1
-
             else:   # reject and return the popped structure
                 indices.pop(-1)
                 indices.append(popped_structure)
+               
+        return old_scores, accepted, indices
 
-        elif opt_type == 'max':
-            if old_score_SAXS + old_score_CS + old_score_FRET + old_score_JC + old_score_NOEs + old_score_PREs + \
-                    old_score_RDCs + old_score_RH > new_score_SAXS + new_score_CS + new_score_FRET + new_score_JC + \
-                    new_score_NOEs + new_score_PREs + new_score_RDCs + new_score_RH:
-                indices.pop(-1)
-                indices.append(popped_structure)
+
+    def calc_scores(self, dtypes, indices=None, ens_size=100):
+        '''
+        Parameters
+        ----------
+        dtypes:
+            list of data types to score 
+        indices: ndarray, optional (default: None)
+            This is the fastest way to get the EISD score and RMSD of all properties for a given set of indices.
+            shape: (number_of_ensembles, size_of_ensemble)
+        ens_size: int
+            Only used when indices not specified, to randomly select subset to score.
+
+        Return
+        ----------
+        Dict of RMSDs, X-EISD scores and ensemble averages for selected conformers
+        '''
+        if indices is None:
+            indices = np.random.choice(np.arange(self.pool_size), ens_size, replace=False)
+
+        # initiate dict to store scores
+        scores = {}
+            
+        for prop in self.exp_data.keys():
+            scores[prop] = [0, 0, 0]
+            if prop == 'jc':
+                scores[prop] = [0, 0, 0, [0]]
+        if 'jc' in dtypes:
+            scores['jc'] = list(jc_optimization_ensemble(self.exp_data, self.bc_data, indices))
+
+        if 'saxs' in dtypes:
+            scores['saxs'] = list(saxs_optimization_ensemble(self.exp_data, self.bc_data, indices, 
+                                nres=self.resnum))[:3]
+
+        if 'cs' in dtypes:
+            scores['cs'] = list(cs_optimization_ensemble(self.exp_data, self.bc_data, indices))[:3]
+
+        if 'fret' in dtypes:
+            scores['fret'] = list(fret_optimization_ensemble(self.exp_data, self.bc_data, indices))[:3]
+
+        if 'noe' in dtypes:
+            scores['noe'] = list(noe_optimization_ensemble(self.exp_data, self.bc_data, indices))[:3]
+
+        if 'pre' in dtypes:
+            scores['pre'] = list(pre_optimization_ensemble(self.exp_data, self.bc_data, indices))[:3]
+
+        if 'rdc' in dtypes:
+            scores['rdc'] = list(rdc_optimization_ensemble(self.exp_data, self.bc_data, indices))[:3]
+
+        if 'rh' in dtypes:
+            scores['rh'] = list(rh_optimization_ensemble(self.exp_data, self.bc_data, indices))[:3]
+     
+        return scores
+
+            
+
+    def optimize(self, epochs, opt_type='max', ens_size=100, mode='all', beta=0.1, output_dir=None):
+        """
+
+        Parameters
+        ----------        
+        opt_type: str, default 'max'
+            The optimization type should be 'mc' or 'max', 'mc' for Metropolis Monte Carlo, 
+            and 'max' for score maximization method.
+        ens_size: int
+        epochs: int
+            Number of optimization trials
+        mode: str or list or dict
+            Data types to optimize
+        beta: float
+            Temperature parameter for MC optimization
+        output_dir: str or path
+            Directory to save optimization outputs.
+
+        Returns
+        -------
+
+        """
+
+
+        # time
+        t0 = time.time()
+
+        # switch the property
+        flags = modes(mode, self.exp_data.keys())
+
+        if output_dir is None:
+            print('Output directory not provided. Outputs will be saved to current directory.')
+            output_dir = os.path.dirname()
+
+        final_results = []
+        final_indices = []
+        final_best_jcoups = []
+
+        for it in range(epochs):
+            # initial scores
+            indices = np.random.choice(np.arange(self.pool_size), ens_size, replace=False)
+            scores = self.calc_scores([key for key in flags if flags[key]], indices)              
+
+            # optimization
+            if opt_type == 'max':
+                max_scores, accepted, new_indices = self.maximize_score(ens_size, indices, flags, scores)
+            elif opt_type == 'mc':
+                max_scores, accepted, new_indices = self.monte_carlo(ens_size, indices, flags, beta, scores)
             else:
-                old_score_SAXS = new_score_SAXS
-                old_score_CS = new_score_CS
-                old_score_FRET = new_score_FRET
-                old_score_JC = new_score_JC
-                old_score_NOEs = new_score_NOEs
-                old_score_PREs = new_score_PREs
-                old_score_RDCs = new_score_RDCs
-                old_score_RH = new_score_RH
+                print('Opt type not supported...Abort.')
+                return 
 
-                old_SAXS_vals = new_SAXS_vals
-                old_shift_vals = new_shift_vals
-                old_FRET_val = new_FRET_val
-                old_alpha_vals = new_alpha_vals
-                old_dist_vals_NOE = new_dist_vals_NOE
-                old_dist_vals_PRE = new_dist_vals_PRE
-                old_RDC_vals = new_RDC_vals
-                old_RH_val = new_RH_val
+            s = [it, accepted]
+            for prop in flags:
+                # calculate scores for unoptimized data types
+                if not flags[prop]:
+                    if prop == 'pre':
+                        max_scores['pre'][:2] = pre_optimization_ensemble(self.exp_data, self.bc_data, new_indices)[:2]
+                    if prop == 'jc':
+                        max_scores['jc'][:2] = jc_optimization_ensemble(self.exp_data, self.bc_data, new_indices)[:2]
+                    if prop == 'cs':
+                        max_scores['cs'][:2] = cs_optimization_ensemble(self.exp_data, self.bc_data, new_indices)[:2]
+                    if prop == 'fret':
+                        max_scores['fret'][:2] = fret_optimization_ensemble(self.exp_data, self.bc_data, new_indices)[:2]
+                    if prop == 'saxs':
+                        max_scores['saxs'][:2] = saxs_optimization_ensemble(self.exp_data, self.bc_data, new_indices,
+                                                    nres=self.resnum)[:2]
+                # aggregate results
+                s.extend(max_scores[prop][:2])
 
-                new_SSE_SAXS = restraint_SSE_SAXS
-                new_SSE_CS = restraint_SSE_CS
-                new_SSE_FRET = restraint_SSE_FRET
-                new_SSE_JC = restraint_SSE_JC
-                new_SSE_NOE = restraint_SSE_NOE
-                new_SSE_PRE = restraint_SSE_PRE
-                new_SSE_RDC = restraint_SSE_RDC
-                new_SSE_RH = restraint_SSE_RH
+            final_results.append(s)
+            final_indices.append(new_indices)
+            final_best_jcoups.append(max_scores['jc'][2])
+            if self.verbose: print("\n### iteration: %i  (elapsed time: %f seconds)"%(it+1, time.time()-t0))
 
-                accepted = accepted + 1
-
-    return old_score_SAXS, new_SSE_SAXS, old_score_CS, new_SSE_CS, old_score_FRET, new_SSE_FRET, old_score_JC, new_SSE_JC, old_score_NOEs, new_SSE_NOE, old_score_PREs, new_SSE_PRE, old_score_RDCs, new_SSE_RDC, old_score_RH, new_SSE_RH, accepted, indices, jcoup_vals
-
-
-def main(exp_data, bc_data, pre_indices=None, ens_size=100,
-         epochs=250, mode='all', beta=0.0, opt_type=None, output_dir=None, verbose=False):
-    """
-
-    Parameters
-    ----------
-    exp_data
-    bc_data
-    pre_indices: ndarray, optional (default: None)
-        This is the fastest way to get the EISD score and RMSD of all properties for a given set of indices.
-        shape: (number_of_ensembles, size_of_ensemble)
-
-    ens_size
-    epochs
-    mode
-    beta
-    opt_type: str, optional (default: None)
-        The optimization type can be 'mc' or 'max', 'mc' for Metropolis Monte Carlo, and 'max' for score maximization method.
-        If None, unoptimized results will be returned.
-
-    output_dir
-    verbose
-
-    Returns
-    -------
-
-    """
-
-    #  get size
-    pool_size = bc_data['jc'].data.shape[0]
-    if verbose: print("\n### pool size: %i"%pool_size)
-    # time
-    t0 = time.time()
-
-    # switch the property
-    flags = modes(mode)
-
-    final_results = []
-    final_indices = []
-    final_best_jcoups = []
-
-    if pre_indices is not None:
-        epochs = pre_indices.shape[0]
-        flags = modes('all')
-        opt_type = None
-        ens_size = pre_indices.shape[1]
-
-    for it in range(epochs):
-        # random selection without replacement
-        if pre_indices is None:
-            # indices = np.random.randint(0, pool_size, ens_size)   # shape: (100,)
-            indices = np.random.choice(np.arange(pool_size), ens_size, replace=False)
-        else:
-            indices = pre_indices[it]
-
-        # SAXS optimization on ensemble
-        if flags['saxs']:
-            sse_saxs, total_score_saxs, bc_saxs, _ = saxs_optimization_ensemble(exp_data, bc_data, indices)
-        else:
-            sse_saxs, total_score_saxs, bc_saxs = [0, 0, 0]
-
-        # CS optimization on ensemble
-        if flags['cs']:
-            sse_cs, total_score_cs, bc_cs, _ = cs_optimization_ensemble(exp_data, bc_data, indices)
-        else:
-            cs_num = 1.
-            sse_cs, total_score_cs, bc_cs = [0, 0, 0]
-
-        # FRET optimization on ensemble
-        if flags['fret']:
-            sse_fret, total_score_fret, bc_fret, _ = fret_optimization_ensemble(exp_data, bc_data, indices)
-        else:
-            sse_fret, total_score_fret, bc_fret = [0, 0, 0]
-
-        # JC optimization on ensemble
+        result_header = ['index', 'accepts']
+        for prop in flags:
+            result_header.append(prop+'_rmsd')
+            result_header.append(prop+'_score')
+        pd.DataFrame(final_results).to_csv(os.path.join(output_dir, 'results.csv'), index=False, header=result_header)
+        pd.DataFrame(final_indices).to_csv(os.path.join(output_dir, 'indices.csv'), index=False, header=False)
+        if self.verbose:
+            output = pd.DataFrame(final_results)
+            for n in range(2, 18):
+                print(output.iloc[:, n].mean(), output.iloc[:, n].std())
         if flags['jc']:
-            sse_jc, total_score_jc, best_jcoups, _, bc_alpha_vals_jc = jc_ensemble(exp_data, bc_data, indices)
-        else:
-            jc_num = 1.
-            sse_jc, total_score_jc, bc_alpha_vals_jc, best_jcoups = [0, 0, 0, [0]]
-
-        # NOEs optimization on ensemble
-        if flags['noe']:
-            noe_num = exp_data['noe'].data.shape[0]
-            sse_noe, total_score_noe, bc_dist_vals_noe, _ = noe_optimization_ensemble(exp_data, bc_data, indices)
-        else:
-            noe_num = 1.
-            sse_noe, total_score_noe, bc_dist_vals_noe = [0, 0, 0]
-
-        # PREs optimization on ensemble
-        if flags['pre']:
-            sse_pre, total_score_pre, bc_pre, _  = pre_optimization_ensemble(exp_data, bc_data, indices)
-        else:
-            pre_num = 1.
-            sse_pre, total_score_pre, bc_pre = [0, 0, 0]
-
-        # RDCs optimization on ensemble
-        if flags['rdc']:
-            sse_rdc, total_score_rdc, bc_rdc, _  = rdc_optimization_ensemble(exp_data, bc_data, indices)
-        else:
-            sse_rdc, total_score_rdc, bc_rdc = [0, 0, 0]
-
-        # RH optimization on ensemble
-        if flags['rh']:
-            sse_rh, total_score_rh, bc_rh, _  = rh_optimization_ensemble(exp_data, bc_data, indices)
-        else:
-            sse_rh, total_score_rh, bc_rh = [0, 0, 0]
-
-        # optimization
-        if opt_type is not None:
-            max_score_SAXS, opt_SSE_SAXS, max_score_CS, opt_SSE_CS, max_score_FRET, opt_SSE_FRET, max_score_JC, opt_SSE_JC, \
-            max_score_NOEs, opt_SSE_NOE, max_score_PREs, opt_SSE_PRE, max_score_RDCs, opt_SSE_RDC, max_score_RH, opt_SSE_RH, \
-            accepted, new_indices, best_jcoups = maximize_score_SAXS(exp_data, bc_data, ens_size, indices, pool_size, flags,beta, opt_type,
-                                                                     total_score_saxs, total_score_cs, total_score_fret,
-                                                                     total_score_jc,
-                                                                     total_score_noe, total_score_pre, total_score_rdc,
-                                                                     total_score_rh,
-                                                                     bc_saxs, bc_cs, bc_fret, bc_alpha_vals_jc,
-                                                                     bc_dist_vals_noe, bc_pre, bc_rdc, bc_rh)
-    
-        # calculate scores for unoptimized data types (JC, NOE, PRE)
-        if not flags['pre']:
-            opt_SSE_PRE, max_score_PREs = pre_optimization_ensemble(exp_data, bc_data, new_indices)[:2]
-        #if not flags['noe']:
-        #    opt_SSE_NOE, max_score_NOEs = noe_optimization_ensemble(exp_data, bc_data, new_indices)[:2]
-        if not flags['jc']:
-            opt_SSE_JC, max_score_JC = jc_ensemble(exp_data, bc_data, new_indices)[:2]
-
-        s = [it, accepted, max_score_SAXS, max_score_CS, max_score_FRET, max_score_JC,
-                           max_score_NOEs, max_score_PREs, max_score_RDCs, max_score_RH,
-             opt_SSE_SAXS, opt_SSE_CS, opt_SSE_FRET, opt_SSE_JC, opt_SSE_NOE, 
-             opt_SSE_PRE, opt_SSE_RDC, opt_SSE_RH
-             ]
-        final_results.append(s)
-        final_indices.append(new_indices)
-        final_best_jcoups.append(best_jcoups)
-
-        if verbose: print("\n### iteration: %i  (elapsed time: %f seconds)"%(it+1, time.time()-t0))
-
-    pd.DataFrame(final_results).to_csv(os.path.join(output_dir, 'results.csv'), index=False, header=False)
-    pd.DataFrame(final_indices).to_csv(os.path.join(output_dir, 'indices.csv'), index=False, header=False)
-    if flags['jc']:
-        pd.DataFrame(final_best_jcoups).to_csv(os.path.join(output_dir, 'best_jcoups.csv'), index=False, header=False)
+            pd.DataFrame(final_best_jcoups).to_csv(os.path.join(output_dir, 'best_jcoups.csv'), index=False, header=False)
 
 
