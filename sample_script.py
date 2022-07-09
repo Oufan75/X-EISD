@@ -14,13 +14,15 @@ from eisd.optimizer import XEISD
 if __name__ == '__main__':
 
     # path to experimental data and structure pools
-    # supports cs, fret, jc, rdc, rh, pre, noe, saxs scoring
+    # supports [cs, fret, jc, rdc, rh, pre, noe, saxs] scoring and optimization
     relative_path = 'exp_data'
     exp_data_path = {
         'pre' : os.path.join(relative_path, "drksh3_pres.txt"),
         'jc'  : os.path.join(relative_path, "drksh3_JC.txt"),
         'cs'  : os.path.join(relative_path, "drksh3_CS.txt"),
     }    
+    # back_calc files should have first column as index, no header, and separated by comma
+    # if your files are in a different format; please adjust accordingly in eisd/parser.py
     relative_path = 'back_calc_data'
     bc_data_path =  {
         'pre' : os.path.join(relative_path, "rl_pre.txt"),
