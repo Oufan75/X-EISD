@@ -6,7 +6,6 @@ import time
 from eisd.utils import modes
 from eisd.scorers import *
 
-
 def monte_carlo(beta, old_total_score, new_total_score):
                 
     new_probability = np.exp(beta*new_total_score)
@@ -15,8 +14,8 @@ def monte_carlo(beta, old_total_score, new_total_score):
     if np.any(np.isinf([old_probability, new_probability])):
         print('Runtime error... reset beta value')
         beta = 500./new_probability
-        new_probability = np.exp(beta*new_score)
-        old_probability = np.exp(beta*old_score)
+        new_probability = np.exp(beta*new_total_score)
+        old_probability = np.exp(beta*old_total_score)
     # accept criterion
     return np.random.random_sample() < min(1, new_probability/old_probability)
 
@@ -33,7 +32,6 @@ class XEISD(object):
         Back calculation files with uncertainties.
     pool_size: int
         number of candidate conformers.
-    
     verbose: bool
 
     """
@@ -49,7 +47,6 @@ class XEISD(object):
             self.pool_size = bc_data['jc'].data.shape[0]
         
         if verbose: print("\n### Pool size: %i"%pool_size)
-
 
 
     def calc_scores(self, dtypes, indices=None, ens_size=100):
@@ -250,7 +247,6 @@ class XEISD(object):
 
             final_results.append(s)
             final_indices.append(indices)
-            final_best_jcoups.append(old_scores['jc'][2])
             if self.verbose: print("\n### iteration: %i  (elapsed time: %f seconds)"%(it+1, time.time()-t0))
 
         result_header = ['index', 'accepts']
@@ -263,7 +259,8 @@ class XEISD(object):
             for n in range(2, len(result_header)):
                 out = pd.DataFrame(final_results)
                 print(f'{result_header[n]: <10} {out.iloc[:, n].mean(): >25} {out.iloc[:, n].std(): >25}')
-        if flags['jc']:
+        if "jc" in flags:
+            final_best_jcoups.append(old_scores['jc'][2])
             pd.DataFrame(final_best_jcoups).to_csv(os.path.join(output_dir, 'best_jcoups.csv'), index=False, header=False)
 
 

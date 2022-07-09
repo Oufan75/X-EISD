@@ -1,6 +1,9 @@
 # only here!
 .idea/*
-/local/*
+back_calc_data/
+local/
+exp_data/
+4ebp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

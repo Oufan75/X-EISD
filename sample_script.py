@@ -41,17 +41,20 @@ if __name__ == '__main__':
         'cs': {'C': 1.31, 'CA': 0.97, 'CB': 1.29, 'H': 0.38, 'HA': 0.29} #reported from UCBShifts
         # J-coupling errors set by default
     }
-
+    
     # other parameters
-    run_mode = 'all'    # supports single, dual, multiple and all data types optimization:
-                        # for specific joint data combinations: use [data_type1, data_type2, ...], ex. ['jc', 'pre']
-    resnum = 59         # protein residue number for SAXS calculations
-    ens_size = 100      # ensemble size
+    run_mode = "singles" # supports single, dual, multiple and all data types optimization:
+                         # for specific joint data combinations: use [data_type1, data_type2, ...], ex. ['jc', 'pre']
+    trials = 10
+    resmum = 59         
+    ens_size = 100      # final ensemble size
     pool_size = 400     # initial conformer number
-    trials = 100        # number of optimization runs 
     opt_type = 'max'    # optimization type: 'max', 'mc'
     beta = 0.1          # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
-    verbose = False     # if print warning/debugging/output infos
+    verbose = False
+    abs_output = 'local/'      # outputs save to
+    if not os.path.exists(abs_output):
+        os.makedirs(abs_output)
     
     exp_data = read_data(exp_data_path, mode='exp')
     bc_data = read_data(bc_data_path, mode='bc', bc_errors=bc_errors)
@@ -59,25 +62,21 @@ if __name__ == '__main__':
 
     # run_mode: all
     if run_mode == 'all':
-        abs_output = 'local/%s_all/'%(opt_type)    
-        xeisd_optimization.optimize(trials, mode='all', ens_size=ens_size, opt_type=opt_type, output_dir=abs_output) 
+        xeisd_optimization.optimize(trials, mode='all', ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output) 
 
     # run_mode: dual
     elif run_mode == 'duals':
         pairs = make_pairs(list(exp_data.keys()))
-        #print(pairs)
         for pair in pairs:
-            abs_output = 'local/%s_%s_%s/'%(opt_type, pair[0], pair[1])
-            xeisd_optimization.optimize(trials, mode=pair, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
+            abs_output = '%s/%s_%s_%s/'%(abs_output, opt_type, pair[0], pair[1])
+            xeisd_optimization.optimize(trials, mode=pair, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
 
     # run_mode: single
     elif run_mode == 'singles':
-        #single_modes = ['cs', 'pre']
         for mode in exp_data.keys():
-            abs_output = 'local/%s_%s/'%(opt_type, mode)
-            xeisd_optimization.optimize(trials, mode=mode, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
+            abs_output = '%s/%s_%s/'%(abs_output, opt_type, mode)
+            xeisd_optimization.optimize(trials, mode=mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
     
     else:
-        abs_output = 'local/'      # outputs save to
         xeisd_optimization.optimize(trials, mode=run_mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
 
