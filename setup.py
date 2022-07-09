@@ -12,10 +12,10 @@ if __name__ == "__main__":
     setuptools.setup(
         name='eisd',
         version=eisd.__version__,
-        author='James Lincoff, THGLab',
-        author_email='jlincoff@berkeley.edu',
+        author='Oufan Zhang, THGLab',
+        author_email='oz57@berkeley.edu',
         project_urls={
-            'Source': 'https://github.com/THGLab/eisd'
+            'Source': 'https://github.com/Oufan75/eisd'
         },
         description=
         'Experimental Inferential Structure Determination',
