@@ -15,7 +15,7 @@ if __name__ == "__main__":
         author='Oufan Zhang, THGLab',
         author_email='oz57@berkeley.edu',
         project_urls={
-            'Source': 'https://github.com/Oufan75/eisd'
+            'Source': 'https://github.com/Oufan75/X-EISD'
         },
         description=
         'Experimental Inferential Structure Determination',
