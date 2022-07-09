@@ -1,7 +1,7 @@
 # X-EISD: Extended Experimental Inferential Structure Determination
 X-EISD is a Bayeian approach to perform Experimental Inferential Structure Determination of ensembles for intrinsically disordered proteins.
 
---  update: June 13, 2022
+--  update: June, 2022
 
 
 ## Installation:
