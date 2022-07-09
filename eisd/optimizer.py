@@ -59,8 +59,8 @@ class XEISD(object):
         dtypes:
             list of data types to score 
         indices: ndarray, optional (default: None)
-            This is the fastest way to get the EISD score and RMSD of all properties for a given set of indices.
-            shape: (number_of_ensembles, size_of_ensemble)
+            This is the fastest way to get the EISD score and RMSD of selected properties for a given set of indices.
+            shape: (size_of_ensemble, )
         ens_size: int
             Only used when indices not specified, to randomly select subset to score.
 
@@ -134,8 +134,8 @@ class XEISD(object):
         flags = modes(mode, self.exp_data.keys())
 
         if output_dir is None:
-            print('Output directory not provided. Outputs will be saved to current directory.')
-            output_dir = os.path.dirname()
+            if self.verbose: print('Output directory not provided. Outputs will be saved to current directory.')
+            output_dir = os.getcwd()
         elif not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
