@@ -18,8 +18,6 @@ if __name__ == "__main__":
         },
         description=
         'Experimental Inferential Structure Determination',
-        # long_description=long_description,
-        scripts=['script/eisdshell'],
         keywords=[
             'Bayesian Optimization', 'Intrinsically Disordered Proteins'
         ],
