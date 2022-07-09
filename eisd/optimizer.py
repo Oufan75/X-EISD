@@ -259,9 +259,10 @@ class XEISD(object):
         pd.DataFrame(final_results).to_csv(os.path.join(output_dir, 'results.csv'), index=False, header=result_header)
         pd.DataFrame(final_indices).to_csv(os.path.join(output_dir, 'indices.csv'), index=False, header=False)
         if self.verbose:
-            output = pd.DataFrame(final_results)
+            print('{0: >35} {1: >25}'.format('mean', 'stdev'))
             for n in range(2, len(result_header)):
-                print(result_header[n], output.iloc[:, n].mean(), output.iloc[:, n].std())
+                out = pd.DataFrame(final_results)
+                print(f'{result_header[n]: <10} {out.iloc[:, n].mean(): >25} {out.iloc[:, n].std(): >25}')
         if flags['jc']:
             pd.DataFrame(final_best_jcoups).to_csv(os.path.join(output_dir, 'best_jcoups.csv'), index=False, header=False)
 
