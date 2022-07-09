@@ -211,7 +211,7 @@ class XEISD(object):
         dtypes:
             list of data types to score 
         indices: ndarray, optional (default: None)
-            This is the fastest way to get the EISD score and RMSD of all properties for a given set of indices.
+            This is the fastest way to get the EISD score and RMSD for a given set of indices.
             shape: (number_of_ensembles, size_of_ensemble)
         ens_size: int
             Only used when indices not specified, to randomly select subset to score.
@@ -343,7 +343,7 @@ class XEISD(object):
         if self.verbose:
             output = pd.DataFrame(final_results)
             for n in range(2, 18):
-                print(output.iloc[:, n].mean(), output.iloc[:, n].std())
+                print(result_header[n], output.iloc[:, n].mean(), output.iloc[:, n].std())
         if flags['jc']:
             pd.DataFrame(final_best_jcoups).to_csv(os.path.join(output_dir, 'best_jcoups.csv'), index=False, header=False)
 
