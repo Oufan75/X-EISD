@@ -11,7 +11,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 if __name__ == "__main__":
     setuptools.setup(
         name='eisd',
-        version=eisd.__version__,
         author='Oufan Zhang, THGLab',
         author_email='oz57@berkeley.edu',
         project_urls={
