@@ -68,8 +68,9 @@ if __name__ == '__main__':
 
     result_header = []
     for prop in results:
-            result_header.extend([prop+'_rmsd', prop+'_score'])
-    for n in range(output.shape[1]):
-        print(result_header[n], output.iloc[:, n].mean(), output.iloc[:, n].std())
+        result_header.extend([prop+'_rmsd', prop+'_score'])
+    print('{0: >35} {1: >25}'.format('mean', 'stdev'))
+    for n in range(len(result_header)):
+        print(f'{result_header[n]: <10} {output.iloc[:, n].mean(): >25} {output.iloc[:, n].std(): >25}')
     output.to_csv(os.path.join(abs_output, 'scores.csv'), header=result_header)
 
