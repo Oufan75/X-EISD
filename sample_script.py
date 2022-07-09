@@ -51,14 +51,15 @@ if __name__ == '__main__':
     trials = 100        # number of optimization runs 
     opt_type = 'max'    # optimization type: 'max', 'mc'
     beta = 0.1          # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
-    abs_output = 'local/'      # outputs save to
+    verbose = False     # if print warning/debugging/output infos
     
     exp_data = read_data(exp_data_path, mode='exp')
     bc_data = read_data(bc_data_path, mode='bc', bc_errors=bc_errors)
-    xeisd_optimization = XEISD(exp_data, bc_data, pool_size=pool_size, nres=resnum)
+    xeisd_optimization = XEISD(exp_data, bc_data, pool_size=pool_size, nres=resnum, verbose=verbose)
 
     # run_mode: all
     if run_mode == 'all':
+        abs_output = 'local/%s_all/'%(opt_type)    
         xeisd_optimization.optimize(trials, mode='all', ens_size=ens_size, opt_type=opt_type, output_dir=abs_output) 
 
     # run_mode: dual
@@ -77,5 +78,6 @@ if __name__ == '__main__':
             xeisd_optimization.optimize(trials, mode=mode, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
     
     else:
+        abs_output = 'local/'      # outputs save to
         xeisd_optimization.optimize(trials, mode=run_mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
 
