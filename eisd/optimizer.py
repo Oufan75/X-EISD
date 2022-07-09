@@ -292,6 +292,8 @@ class XEISD(object):
         if output_dir is None:
             print('Output directory not provided. Outputs will be saved to current directory.')
             output_dir = os.path.dirname()
+        elif not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
         final_results = []
         final_indices = []
