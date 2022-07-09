@@ -1,6 +1,5 @@
 # only here!
 .idea/*
-*.ipynb
 /local/*
 
 # Byte-compiled / optimized / DLL files
