@@ -18,18 +18,17 @@ the requirements.
 ## Citation:
 Please cite the use of X-EISD as:
 
-
     (1) James Lincoff, Mojtaba Haghighatlari, Mickael Krzeminski, Joao Teixeira, Gregory Neal-Gomes, Claudu Gardinaru, Julie Forman-Kay, Teresa Head-Gordon, https://www.nature.com/articles/s42004-020-0323-0
     (2) David H. Brookes, and Teresa Head-Gordon, Experimental Inferential Structure Determination of Ensembles for Intrinsically Disordered Proteins, JACS 138, 2016, 4530-4538 DOI: 10.1021/jacs.6b00351
 
 ## Getting Started 
-You can either follow along the sample_script.py in the repository or use the commnd line interface to run eisd: 
+You can follow along the sample_script.py in the repository: 
 
     python sample_script.py     # first modify sample_script based upon your request 
+    
+Example experimental data files can be found in the data folder. Examples back calculations are shown in the EISD_back_calc notebook. Please refer to the above 2 papers for details on experimental data and back calculations and determining uncertainties.
       
-or
 
-    eisdshell -d/--datapath, -m/--mode, -s/--structure, -e/--epochs, -o/--output
 
 
 
