@@ -28,6 +28,7 @@ if __name__ == '__main__':
         'cs'  : os.path.join(relative_path, "rl_cs.txt"),
     }
     # define back calculation uncertainties
+    # refer to Lincoff et al. 2020 for details
     bc_errors = {
         'pre': 0.0001,
         'noe': 0.0001,
