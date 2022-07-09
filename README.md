@@ -1,7 +1,7 @@
 # X-EISD: Extended Experimental Inferential Structure Determination
 X-EISD is a Bayeian approach to perform Experimental Inferential Structure Determination of ensembles for intrinsically disordered proteins.
 
---  update: June, 2022
+--  latest update: July, 2022
 
 
 ## Installation:
@@ -26,7 +26,7 @@ You can follow along the sample_script.py in the repository:
 
     python sample_script.py     # first modify sample_script based upon your request 
     
-Example experimental data files can be found in the data folder. X-EISD program does not support back calculations, though we show some back calculation examples in the EISD_back_calc notebook. Please refer to the above 2 papers for details on experimental data, back calculation methods and determining uncertainties.
+Example experimental data files can be found in the data folder. X-EISD program does not support back calculations, though some back calculation examples are shown in the EISD_back_calc notebook. Please refer to the above 2 papers for details on experimental data, back calculation methods and determining uncertainties.
       
 
 
