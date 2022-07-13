@@ -72,8 +72,8 @@ if __name__ == '__main__':
 
     # run_mode: single
     elif run_mode == 'singles':
-        single_modes = ['cs', 'pre']
-        for mode in single_modes:
+        #single_modes = ['cs', 'pre']
+        for mode in exp_data.keys():
             abs_output = 'local/%s_%s/'%(opt_type, mode)
             xeisd_optimization.optimize(trials, mode=mode, ens_size=ens_size, opt_type=opt_type, output_dir=abs_output)
     
