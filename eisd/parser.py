@@ -35,12 +35,7 @@ def read_data(filenames, mode, bc_errors={}):
         data = {}
         for key in filenames:
             # property name: Stack(name, exp data, sigma, mu)
-            if key == 'fret':
-                data['fret'] = Stack('fret', pd.read_csv(filenames[key]), 0.02, None)
-            elif key == 'rh':
-                data['rh'] = Stack('rh', pd.read_csv(filenames[key]), 0.3, None)
-            else:
-                data[key] = Stack(key, pd.read_csv(filenames[key]), None, None)
+            data[key] = Stack(key, pd.read_csv(filenames[key]), None, None)
 
         return data
 

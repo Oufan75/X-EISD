@@ -89,7 +89,7 @@ def fret_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped
                                ens_size=100):
     # prepare data
     exp = exp_data['fret'].data["value"].values  # scalar
-    exp_sigma = exp_data['fret'].sigma  # scalar
+    exp_sigma = exp_data['fret'].data["error"].values  # scalar
    
     if indices is None:
         bc = old_vals-(bc_data['fret'].data.values[popped_structure, :]-bc_data['fret'].data.values[new_index, :])/ens_size
@@ -309,8 +309,8 @@ def rdc_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_
 def rh_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None,
                             ens_size=100.):
     # prepare data
-    exp = exp_data['rh'].data  # scalar
-    exp_sigma = exp_data['rh'].sigma  # scalar
+    exp = exp_data['rh'].data["value"].values  # scalar
+    exp_sigma = exp_data['rh'].data['error'].values  # scalar
 
     if indices is None:
         bc = old_vals - (bc_data['rh'].data.values[popped_structure, :] - \
@@ -320,7 +320,7 @@ def rh_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
         bc = np.mean(bc_ensemble, axis=0)  # shape: (1,)
 
     bc_sigma = bc_data['rh'].sigma # scalar
-
+    
     # optimization
     opt_params = calc_opt_params(bc, exp, exp_sigma, bc_sigma)
     f, f_comps = calc_score(bc, exp, exp_sigma, bc_sigma, opt_params)
@@ -329,4 +329,4 @@ def rh_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
     rmse = np.mean(error)**0.5
     total_score = np.sum(f)
 
-    return rmse, total_score, bc[0], error
+    return rmse, total_score, bc, error

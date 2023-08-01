@@ -99,7 +99,7 @@ class XEISD(object):
             
 
     def optimize(self, epochs, opt_type='max', ens_size=100, mode='all', beta=0.1, 
-                iters=10000, output_dir=None):
+                iters=100000, output_dir=None):
         """
 
         Parameters
