@@ -14,35 +14,48 @@ from eisd.optimizer import XEISD
 if __name__ == '__main__':
 
     # path to experimental data and structure pools
+<<<<<<< HEAD
     # supports [cs, fret, jc, rdc, rh, pre, noe, saxs] scoring and optimization
     relative_path = 'exp_data'
+=======
+    # supports cs, fret, jc, rdc, rh, pre, noe, saxs scoring
+    relative_path = '4ebp'
+>>>>>>> 80668db (debug syntax)
     exp_data_path = {
-        'pre' : os.path.join(relative_path, "drksh3_pres.txt"),
-        'jc'  : os.path.join(relative_path, "drksh3_JC.txt"),
-        'cs'  : os.path.join(relative_path, "drksh3_CS.txt"),
+        'fret' : os.path.join(relative_path, "exp.fret"),
+        #'pre' : os.path.join(relative_path, "drksh3_exp_pres.txt"),
+        #'jc'  : os.path.join(relative_path, "drksh3_exp_JC.txt"),
+        #'cs' : os.path.join(relative_path, "drksh3_exp_CS.txt"),
+        #'saxs'  : os.path.join(relative_path, "unfolded_saxs_exp.txt"),
     }    
+<<<<<<< HEAD
     # back_calc files should have first column as index, no header, and separated by comma
     # if your files are in a different format; please adjust accordingly in eisd/parser.py
     relative_path = 'back_calc_data'
+=======
+    relative_path = '4ebp'
+>>>>>>> 80668db (debug syntax)
     bc_data_path =  {
-        'pre' : os.path.join(relative_path, "rl_pre.txt"),
-        'jc'  : os.path.join(relative_path, "rl_jc.txt"),
-        'cs'  : os.path.join(relative_path, "rl_cs.txt"),
+        'fret' : os.path.join(relative_path, "bc.txt"),
+        #'pre' : os.path.join(relative_path, "rl_pre.txt"),
+        #'jc'  : os.path.join(relative_path, "drksh3_jcs.txt"),
+        #'cs'  : os.path.join(relative_path, "drksh3_CSs.txt"),
     }
     # define back calculation uncertainties
     # refer to Lincoff et al. 2020 for details
     bc_errors = {
-        'pre': 0.0001,
-        'noe': 0.0001,
-        'saxs': 0.006,
-        'fret': 0.0074,
-        'rh': 0.812,
-        'rdc': 0.88,
-        'cs': {'C': 1.31, 'CA': 0.97, 'CB': 1.29, 'H': 0.38, 'HA': 0.29} #reported from UCBShifts
+        #'pre': 0.0001,
+        #'noe': 0.0001,
+        #'saxs': 0.006,
+        'fret': 0.003,
+        #'rh': 0.812,
+        #'rdc': 0.88,
+        #'cs': {'C': 1.31, 'CA': 0.97, 'CB': 1.29, 'H': 0.38, 'HA': 0.29} #reported from UCBShifts
         # J-coupling errors set by default
     }
     
     # other parameters
+<<<<<<< HEAD
     run_mode = "singles" # supports single, dual, multiple and all data types optimization:
                          # for specific joint data combinations: use [data_type1, data_type2, ...], ex. ['jc', 'pre']
     trials = 10
@@ -67,16 +80,49 @@ if __name__ == '__main__':
     # run_mode: dual
     elif run_mode == 'duals':
         pairs = make_pairs(list(exp_data.keys()))
+=======
+    run_mode = 'singles'    # supports single, dual, multiple and all data types optimization:
+                        # for specific joint data combinations: use [data_type1, data_type2, ...], ex. ['jc', 'pre']
+    resnum = 59         # protein residue number for SAXS calculations
+    ens_size = 100       # ensemble size
+    pool_size = 500     # initial conformer number
+    opt_type = 'mc'    # optimization type: 'max', 'mc'
+    beta = 1         # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
+    abs_output = '4ebp'      # outputs save to
+    
+    exp_data = read_data(exp_data_path, mode='exp')
+    bc_data = read_data(bc_data_path, mode='bc', bc_errors=bc_errors)
+    xeisd_optimization = XEISD(exp_data, bc_data, pool_size=pool_size, nres=resnum, verbose=True)
+
+    # run_mode: all
+    if run_mode == 'all':
+        abs_output = '%s/%s_all/'%(abs_output, opt_type)
+        xeisd_optimization.optimize(5, mode='all', ens_size=ens_size, opt_type=opt_type, output_dir=abs_output) 
+
+    # run_mode: dual
+    elif run_mode == 'duals':
+        pairs = make_pairs(list(bc_data.keys()))
+        #print(pairs)
+>>>>>>> 80668db (debug syntax)
         for pair in pairs:
             abs_output = '%s/%s_%s_%s/'%(abs_output, opt_type, pair[0], pair[1])
             xeisd_optimization.optimize(trials, mode=pair, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
 
     # run_mode: single
     elif run_mode == 'singles':
+<<<<<<< HEAD
         for mode in exp_data.keys():
             abs_output = '%s/%s_%s/'%(abs_output, opt_type, mode)
             xeisd_optimization.optimize(trials, mode=mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
     
     else:
         xeisd_optimization.optimize(trials, mode=run_mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
+=======
+        for mode in bc_data.keys():
+            abs_output = '%s/%s_%s/'%(abs_output, opt_type, mode)
+            xeisd_optimization.optimize(10, mode=mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
+    
+    else:
+        xeisd_optimization.optimize(10, mode=run_mode, ens_size=ens_size, beta=beta, opt_type=opt_type, output_dir=abs_output)
+>>>>>>> 80668db (debug syntax)
 

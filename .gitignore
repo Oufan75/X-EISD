@@ -5,7 +5,14 @@ local/
 exp_data/
 4ebp/
 .DS_Store
+<<<<<<< HEAD
 */.DS_Store
+=======
+exp_data/*
+back_calc_data/*
+local/*
+4ebp/
+>>>>>>> 80668db (debug syntax)
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

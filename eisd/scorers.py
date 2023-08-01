@@ -8,7 +8,7 @@ def calc_opt_params(beta, exp, exp_sig, sig):
     opt_params = np.zeros(beta.shape)
     if not np.any(exp_sig==0):
         ratio = (sig**2.0)/(exp_sig**2.0)
-        opt_params = (ratio*(exp-beta))/(1.0+ratio)
+        opt_params = (ratio * (exp - beta))/(1.0 + ratio)
     return opt_params
 
 
@@ -20,7 +20,7 @@ def normal_loglike(x, mu, sig, gamma=1.0):
     if not np.any(sig==0):
         exp_val = -gamma * ((x - mu)** 2.0)/(2.0 *(sig ** 2.0))
         pre_exp = 1.0/(np.sqrt(2.0*np.pi*(sig ** 2.0)))
-        logp = np.log(pre_exp*np.exp(exp_val))
+        logp = np.log(pre_exp * np.exp(exp_val))
     return logp
 
 
@@ -88,15 +88,15 @@ def cs_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
 def fret_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None, 
                                ens_size=100):
     # prepare data
-    exp = exp_data['fret'].data  # scalar
+    exp = exp_data['fret'].data["value"].values  # scalar
     exp_sigma = exp_data['fret'].sigma  # scalar
-
+   
     if indices is None:
         bc = old_vals-(bc_data['fret'].data.values[popped_structure, :]-bc_data['fret'].data.values[new_index, :])/ens_size
     else:
         bc_ensemble = bc_data['fret'].data.values[indices, :]  # shape: (100, 1)
         bc = np.mean(bc_ensemble, axis=0)  # shape: (1,)
-
+      
     bc_sigma = bc_data['fret'].sigma # scalar
 
     # optimization

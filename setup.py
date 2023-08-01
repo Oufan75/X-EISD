@@ -11,8 +11,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 if __name__ == "__main__":
     setuptools.setup(
         name='eisd',
-        author='Oufan Zhang, THGLab',
-        author_email='oz57@berkeley.edu',
+        author='James Lincoff, Oufan Zhang, THGLab',
         project_urls={
             'Source': 'https://github.com/Oufan75/X-EISD'
         },
