@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # if your files are in a different format; please adjust accordingly in eisd/parser.py
     relative_path = 'back_calc_data'
     bc_data_path =  {
-        'pre' : os.path.join(relative_path, "rl_pre.txt"),
+        'pre' : os.path.join(relative_path, "drksh3_pres.txt"),
         'jc'  : os.path.join(relative_path, "drksh3_jcs.txt"),
         'cs'  : os.path.join(relative_path, "drksh3_CSs.txt"),
     }
@@ -43,10 +43,10 @@ if __name__ == '__main__':
     }
     
     # other parameters
-    run_mode = "singles" # supports single, dual, multiple and all data types optimization:
-                         # for specific joint data combinations: use [data_type1, data_type2, ...], ex. ['jc', 'pre']
+    run_mode = "all"    # supports single, dual, multiple and all data types optimization:
+                        # for specific joint data combinations: use [data_type1, data_type2, ...], ex. ['jc', 'pre']
     trials = 10
-    resmum = 59         
+    resnum = 59         
     ens_size = 100      # final ensemble size
     pool_size = 400     # initial conformer number
     opt_type = 'max'    # optimization type: 'max', 'mc'
