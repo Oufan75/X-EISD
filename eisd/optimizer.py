@@ -6,19 +6,6 @@ import time
 from eisd.utils import modes
 from eisd.scorers import *
 
-def monte_carlo(beta, old_total_score, new_total_score):
-                
-    new_probability = np.exp(beta*new_total_score)
-    old_probability = np.exp(beta*old_total_score)
-    # to deal with runtime error caused by large score values
-    if np.any(np.isinf([old_probability, new_probability])):
-        print('Runtime error... reset beta value')
-        beta = 500./new_probability
-        new_probability = np.exp(beta*new_total_score)
-        old_probability = np.exp(beta*old_total_score)
-    # accept criterion
-    return np.random.random_sample() < min(1, new_probability/old_probability)
-
 
 def monte_carlo(beta, old_total_score, new_total_score):
                 
@@ -63,10 +50,6 @@ class XEISD(object):
         if verbose: print("\n### Pool size: %i"%pool_size)
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 80668db (debug syntax)
     def calc_scores(self, dtypes, indices=None, ens_size=100):
         '''
         Parameters
@@ -116,11 +99,7 @@ class XEISD(object):
             
 
     def optimize(self, epochs, opt_type='max', ens_size=100, mode='all', beta=0.1, 
-<<<<<<< HEAD
-                iters=100, output_dir=None):
-=======
-                iters=100000, output_dir=None):
->>>>>>> 80668db (debug syntax)
+                iters=10000, output_dir=None):
         """
 
         Parameters
@@ -153,13 +132,6 @@ class XEISD(object):
         flags = modes(mode, self.exp_data.keys())
 
         if output_dir is None:
-<<<<<<< HEAD
-            if self.verbose: print('Output directory not provided. Outputs will be saved to current directory.')
-=======
-            print('Output directory not provided. Outputs will be saved to current directory.')
->>>>>>> 80668db (debug syntax)
-            output_dir = os.getcwd()
-        elif not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
         final_results = []
@@ -178,11 +150,7 @@ class XEISD(object):
                     new_scores[prop] = [0, 0, 0, [0]]
             accepted = 0
             
-<<<<<<< HEAD
             for iterations in range(iters):
-=======
-            for i in range(iters):
->>>>>>> 80668db (debug syntax)
                 pop_index = np.random.randint(0, ens_size, 1)[0]
                 popped_structure = indices[pop_index]
                 indices.pop(pop_index)
@@ -277,11 +245,6 @@ class XEISD(object):
 
             final_results.append(s)
             final_indices.append(indices)
-<<<<<<< HEAD
-=======
-            if "jc" in flags:
-                final_best_jcoups.append(old_scores['jc'][2])
->>>>>>> 80668db (debug syntax)
             if self.verbose: print("\n### iteration: %i  (elapsed time: %f seconds)"%(it+1, time.time()-t0))
 
         result_header = ['index', 'accepts'] 
@@ -295,10 +258,7 @@ class XEISD(object):
                 out = pd.DataFrame(final_results)
                 print(f'{result_header[n]: <10} {out.iloc[:, n].mean(): >25} {out.iloc[:, n].std(): >25}')
         if "jc" in flags:
-<<<<<<< HEAD
             final_best_jcoups.append(old_scores['jc'][2])
-=======
->>>>>>> 80668db (debug syntax)
             pd.DataFrame(final_best_jcoups).to_csv(os.path.join(output_dir, 'best_jcoups.csv'), index=False, header=False)
 
 
