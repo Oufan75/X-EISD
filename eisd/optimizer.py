@@ -99,7 +99,7 @@ class XEISD(object):
             
 
     def optimize(self, epochs, opt_type='max', ens_size=100, mode='all', beta=0.1, 
-                iters=100000, output_dir=None):
+                iters=10000, output_dir=None):
         """
 
         Parameters
@@ -130,9 +130,9 @@ class XEISD(object):
 
         # switch the property
         flags = modes(mode, self.exp_data.keys())
-
-        if output_dir is None:
-            os.makedirs(output_dir)
+    
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
 
         final_results = []
         final_indices = []
@@ -237,6 +237,10 @@ class XEISD(object):
                         old_scores['cs'][:2] = cs_optimization_ensemble(self.exp_data, self.bc_data, indices)[:2]
                     if prop == 'fret':
                         old_scores['fret'][:2] = fret_optimization_ensemble(self.exp_data, self.bc_data, indices)[:2]
+                    if prop == 'rh':
+                        old_scores['rh'][:2] = rh_optimization_ensemble(self.exp_data, self.bc_data, indices)[:2]
+                    if prop == 'rdc':
+                        old_scores['rdc'][:2] = rdc_optimization_ensemble(self.exp_data, self.bc_data, indices)[:2]
                     if prop == 'saxs':
                         old_scores['saxs'][:2] = saxs_optimization_ensemble(self.exp_data, self.bc_data, indices,
                                                     nres=self.resnum)[:2]

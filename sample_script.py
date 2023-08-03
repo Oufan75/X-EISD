@@ -15,6 +15,7 @@ if __name__ == '__main__':
 
     # path to experimental data and structure pools
     # supports [cs, fret, jc, rdc, rh, pre, noe, saxs] scoring and optimization
+    # exp data should contain index, value, error as header
     relative_path = '4ebp'
     exp_data_path = {
         "fret": os.path.join(relative_path, "exp.fret"),
@@ -24,11 +25,12 @@ if __name__ == '__main__':
         #'cs' : os.path.join(relative_path, "drksh3_exp_CS.txt"),
     }    
     # back_calc files should have first column as index, no header, and separated by comma
+    # each row is a conformer and each column is back calculation aligned with the exp data
     # if your files are in a different format; please adjust accordingly in eisd/parser.py
     relative_path = '4ebp'
     bc_data_path =  {
         "fret": os.path.join(relative_path, "bc.fret"),
-        "rh": os.path.join(relative_path, "bc.rh"),
+        "rh": os.path.join(relative_path, "bc.rh"), 
         #'pre' : os.path.join(relative_path, "drksh3_pres.txt"),
         #'jc'  : os.path.join(relative_path, "drksh3_jcs.txt"),
         #'cs'  : os.path.join(relative_path, "drksh3_CSs.txt"),
