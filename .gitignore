@@ -4,6 +4,7 @@ back_calc_data/
 local/
 exp_data/
 4ebp/
+*.ipynb
 .DS_Store
 */.DS_Store
 
