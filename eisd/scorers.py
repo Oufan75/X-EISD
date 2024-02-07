@@ -20,7 +20,7 @@ def normal_loglike(x, mu, sig, gamma=1.0):
     if not np.any(sig==0):
         exp_val = -gamma * ((x - mu)** 2.0)/(2.0 *(sig ** 2.0))
         pre_exp = 1.0/(np.sqrt(2.0*np.pi*(sig ** 2.0)))
-        logp = np.log(pre_exp * np.exp(exp_val))
+        logp = np.log(pre_exp) + exp_val
     return logp
 
 
@@ -81,7 +81,6 @@ def cs_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
     error = (exp_cs - bc_cs) ** 2.0
     rmse = np.mean(error)**0.5
     total_score = np.sum(f)
-
     return rmse, total_score, bc_cs, error
 
 

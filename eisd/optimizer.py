@@ -50,7 +50,7 @@ class XEISD(object):
         if verbose: print("\n### Pool size: %i"%pool_size)
 
 
-    def calc_scores(self, dtypes, indices=None, ens_size=100):
+    def calc_scores(self, dtypes, indices=None, ens_size=100, expand_CS_errors=False):
         '''
         Parameters
         ----------
@@ -82,7 +82,14 @@ class XEISD(object):
             scores['saxs'] = list(saxs_optimization_ensemble(self.exp_data, self.bc_data, indices, 
                                 nres=self.resnum))[:3]
         if 'cs' in dtypes:
-            scores['cs'] = list(cs_optimization_ensemble(self.exp_data, self.bc_data, indices))[:3]
+            result = list(cs_optimization_ensemble(self.exp_data, self.bc_data, indices))
+            scores['cs'] = result[:3]
+            if expand_CS_errors:
+                CS_rmses = {}
+                atom_types = self.exp_data['cs'].data['atomname'].values
+                for a in atom_types:
+                    CS_rmses[a] = np.mean(result[-1][atom_types == a]) ** 0.5
+                scores['cs_per_atom_rmsd'] = CS_rmses
         if 'fret' in dtypes:
             scores['fret'] = list(fret_optimization_ensemble(self.exp_data, self.bc_data, indices))[:3]
         if 'noe' in dtypes:
@@ -123,7 +130,6 @@ class XEISD(object):
         -------
 
         """
-
 
         # time
         t0 = time.time()
